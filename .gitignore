@@ -1,0 +1,8 @@
+#stuff we don't want
+*.a
+*.o
+*.exe
+*.lib
+*.so
+*.out
+
