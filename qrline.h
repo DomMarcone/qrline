@@ -124,7 +124,7 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 
 	int line = out_size + 1;
 
-	qrline_bit BLANK[] = {1,1};
+	qrline_bit BLANK[] = {0,0};
 
 	qrline_bit temp[4];//used for passing data to qrline_block_to_char()
 
@@ -145,9 +145,7 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 	for( int i = 0; i < size + 6; ++i )
 	{
 		//output[ index++ ] = convert_function;// more quiet zone
-		//printf("pre line 149... ");
 		output = (char*)realloc(output, index+convert_size+1);
-		//printf(" post line 149\n");
 		strcpy(&output[index],convert_result);
 		index += convert_size;
 	}
@@ -155,24 +153,9 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 	//end of line terminator
 	convert_result = "\n";
 	convert_size = strlen(convert_result);
-	//printf("pre line 159... ");
 	output = (char*)realloc(output, index+convert_size+1);
-	//printf("post line 159\n");
 	strcpy(&output[index],convert_result);
 	index += convert_size;
-
-	//output[ index++ ] = "\n";// quiet zone
-	/*
-	for( int i = 0; i < size + 6; ++i )
-	{
-		output[ index++ ] = '\xDB';// more quiet zone
-	}
-	output[ index++ ] = '\n';// quiet zone
-	*/
-
-	//output[ index++ ] = '\xDB';// more quiet zone
-
-	//loop through each block
 
 	for( int j = 0; j <= out_size; ++j )
 	{
@@ -181,9 +164,7 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 		convert_size = strlen(convert_result);
 		for( int i = 0; i < 3; ++i )
 		{
-			//printf("pre line 185... ");
 			output = (char*)realloc(output, index+convert_size+1);
-			//printf("post line 185\n");
 			strcpy(&output[index],convert_result);
 			index += convert_size;
 		}
@@ -235,7 +216,6 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 	}
 
 	//bottom line
-	//BLANK[1]=0;
 	convert_result = convert_function(BLANK);
 	convert_size = strlen(convert_result);
 	for( int i = 0; i < size + 6; ++i )
@@ -251,7 +231,7 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 	index += convert_size;
 
 
-	BLANK[1]=0;
+	BLANK[1]=1;//switch back
 	convert_result = convert_function(BLANK);
 	convert_size = strlen(convert_result);
 	for( int i = 0; i < size + 6; ++i )
@@ -276,13 +256,18 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 /*
 	Convert a 2x2 block to a character
 */
-char*  qrline_block_to_char_unicode( qrline_bit * ar )
+char*  qrline_block_to_char_unicode( qrline_bit * in_ar )
 {
 	/*
 		Blocks are read:
 		12
 		34
 	*/
+	qrline_bit ar[2];
+	//invert, or not
+	ar[0] = in_ar[0]==0 ? 1 : 0;
+	ar[1] = in_ar[1]==0 ? 1 : 0;
+
 	if( ar[0]==0 )
 	{
 		if( ar[1]==0 )
@@ -321,7 +306,7 @@ char qrline_block_to_char_ansi( qrline_bit * ar )
 		1
 	*/
 
-	//invert
+	//invert, or not
 	ar[0] = ar[0]==0 ? 1 : 0;
 	ar[1] = ar[1]==0 ? 1 : 0;
 
