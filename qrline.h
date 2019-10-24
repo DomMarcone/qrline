@@ -97,7 +97,7 @@ qrline_bit * qrline_gen_bitp( int error_type, int pattern_type, int * size, char
 	free( bit_index );
 	free( timing );
 
-	qrline_debug_print( pattern, *size );
+	//qrline_debug_print( pattern, *size );
 
 	return pattern;
 }
@@ -110,7 +110,7 @@ qrline_bit * qrline_gen_bitp( int error_type, int pattern_type, int * size, char
 int qrline_calculate_size( char * input )
 {
 	//return dummy data for now
-	return 21;
+	return 23;
 }
 
 
@@ -139,7 +139,23 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 	//pad the top...
 	output = ( char * ) malloc( sizeof(char) );
 
-	//quiet space on the top line
+	BLANK[0]=1;//Very top line...
+	convert_result = convert_function(BLANK);
+	convert_size = strlen(convert_result);
+	for( int i = 0; i < size + 6; ++i )
+	{
+		output = (char*)realloc(output, index+convert_size+1);
+		strcpy(&output[index],convert_result);
+		index += convert_size;
+	}
+	convert_result = "\n";
+	convert_size = strlen(convert_result);
+	output = (char*)realloc(output, index+convert_size+1);
+	strcpy(&output[index],convert_result);
+	index += convert_size;
+	BLANK[0]=0;//switch back
+
+	//quiet space on the top
 	convert_result = convert_function(BLANK);
 	convert_size = strlen(convert_result);
 	for( int i = 0; i < size + 6; ++i )
