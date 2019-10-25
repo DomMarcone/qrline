@@ -21,8 +21,6 @@
 //mask define for overlaying timings and positional data
 #define QRLINE_MASK 2
 
-#define QRLINE_UNICODE_ESCAPE_SIZE 6
-
 typedef int8_t qrline_bit;
 
 
@@ -30,7 +28,7 @@ typedef int8_t qrline_bit;
 char *       qrline_gen( char * );
 int          qrline_calculate_size( char * );
 char *       qrline_convert_bitp( qrline_bit *, int );
-char         qrline_block_to_char_ansi( qrline_bit * );
+char *       qrline_block_to_char_ansi( qrline_bit * );
 char *       qrline_block_to_char_unicode( qrline_bit * );
 qrline_bit * qrline_generate_timing( int );
 qrline_bit * qrline_overlay_format( qrline_bit * timing, int size, int pattern_format, int error_format );
@@ -316,39 +314,40 @@ char*  qrline_block_to_char_unicode( qrline_bit * in_ar )
 /*
 	Convert a 2x2 block to a character
 */
-char qrline_block_to_char_ansi( qrline_bit * ar )
+char * qrline_block_to_char_ansi( qrline_bit * ar_in )
 {
 	/*
 		Blocks are read:
 		0
 		1
 	*/
-
+	qrline_bit ar[2];
+	
 	//invert, or not
-	ar[0] = ar[0]==0 ? 1 : 0;
-	ar[1] = ar[1]==0 ? 1 : 0;
-
+	ar[0] = ar_in[0]==0 ? 1 : 0;
+	ar[1] = ar_in[1]==0 ? 1 : 0;
+	
 	if( ar[0]==0 )
 	{
 		if( ar[1]==0 )
 		{
 			//00
-			return ' ';
+			return " ";
 		}else
 		{
 			//01
-			return (char) 0xDC;
+			return "\xDC";
 		}
 	} else
 	{
 		if( ar[1]==0 )
 		{
 			//10
-			return (char) 0xDF;
+			return "\xDF";
 		}else
 		{
 			//11
-			return (char) 0xDB;
+			return "\xDB";
 		}
 	}
 
