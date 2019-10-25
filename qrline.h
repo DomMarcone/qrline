@@ -110,7 +110,7 @@ qrline_bit * qrline_gen_bitp( int error_type, int pattern_type, int * size, char
 int qrline_calculate_size( char * input )
 {
 	//return dummy data for now
-	return 23;
+	return 37;
 }
 
 
@@ -306,7 +306,7 @@ char*  qrline_block_to_char_unicode( qrline_bit * in_ar )
 		}else
 		{
 			//1111
-			return "\u2588";
+			return "\u2588";//the second bit makes the background white
 		}
 	}
 
@@ -520,10 +520,11 @@ qrline_bit * qrline_overlay_format( qrline_bit * timing, int size, int pattern_f
 
 	qrline_bit mask_pattern[] = { 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0 };
 
-	for( int i = 0; i < 5; ++i )printf( "%d", (int) format[ i ] );
+	//for( int i = 0; i < 5; ++i )printf( "%d", (int) format[ i ] );
 	//dummy values while i try to get this to work;
 
 	qrline_bit * bch = qrline_bch( 10, 5, 11, format, generator );
+	//qrline_bit bch[10];
 
 	for( int i = 0; i < 10; ++i ) format[ i + 4 ] = bch[ i ];
 
@@ -535,7 +536,7 @@ qrline_bit * qrline_overlay_format( qrline_bit * timing, int size, int pattern_f
 	{
 		format[ i ] = format[ i ] == mask_pattern[ i ] ? 0 : 1;
 	}
-	printf( "\n\n" );
+	//printf( "\n\n" );
 
 	//do a hard-coded fill of the upper right corner
 	timing[ 8            ] = format[ 0 ];
@@ -866,6 +867,8 @@ qrline_bit * qrline_bch( int result_size, int frame_size, int gen_size, qrline_b
 	}
 
 	free( intermediate_results );
+
+	//void encode_bch(struct bch_control *bch, const uint8_t *data, unsigned int len, uint8_t *ecc);
 
 	return result;
 }
