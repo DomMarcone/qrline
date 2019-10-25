@@ -6,7 +6,7 @@
 **                     QRLINE                     **
 ** One header for generating text-based qr codes. **
 **                                                **
-** initial commit by Dominic Marcone              **
+** by Dominic Marcone                             **
 ****************************************************/
 
 #include<stdio.h>
@@ -18,11 +18,16 @@
 #define QRLINE_MIN_SIZE 21
 #define QRLINE_MAX_SIZE 177
 
+#define QRLINE_DEFAULT_PAD 5
+
 //mask define for overlaying timings and positional data
 #define QRLINE_MASK 2
 
 typedef int8_t qrline_bit;
 
+//global variables
+int qrline_pad = QRLINE_DEFAULT_PAD;
+int qrline_left = 4;
 
 //prototypes
 char *       qrline_gen( char * );
@@ -139,10 +144,20 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 	//pad the top...
 	output = ( char * ) malloc( sizeof(char) );
 
+	//add spaces to account for left margin
+	convert_result = " ";
+	convert_size = strlen(convert_result);
+	for( int i = 0; i < qrline_left; ++i )
+	{
+		output = (char*)realloc(output, index+convert_size+1);
+		strcpy(&output[index],convert_result);
+		index += convert_size;
+	}
+
 	BLANK[0]=1;//Very top line...
 	convert_result = convert_function(BLANK);
 	convert_size = strlen(convert_result);
-	for( int i = 0; i < size + 6; ++i )
+	for( int i = 0; i < size + (2*qrline_pad); ++i )
 	{
 		output = (char*)realloc(output, index+convert_size+1);
 		strcpy(&output[index],convert_result);
@@ -155,30 +170,54 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 	index += convert_size;
 	BLANK[0]=0;//switch back
 
-	//quiet space on the top
-	convert_result = convert_function(BLANK);
-	convert_size = strlen(convert_result);
-	for( int i = 0; i < size + 6; ++i )
-	{
-		//output[ index++ ] = convert_function;// more quiet zone
+
+	for( int j = 0; j < qrline_pad/2; ++j ){
+		//add spaces to account for left margin
+		convert_result = " ";
+		convert_size = strlen(convert_result);
+		for( int i = 0; i < qrline_left; ++i )
+		{
+			output = (char*)realloc(output, index+convert_size+1);
+			strcpy(&output[index],convert_result);
+			index += convert_size;
+		}
+
+		//quiet space on the top
+		convert_result = convert_function(BLANK);
+		convert_size = strlen(convert_result);
+		for( int i = 0; i < size + (2*qrline_pad); ++i )
+		{
+			//output[ index++ ] = convert_function;// more quiet zone
+			output = (char*)realloc(output, index+convert_size+1);
+			strcpy(&output[index],convert_result);
+			index += convert_size;
+		}
+
+
+		//end of line terminator
+		convert_result = "\n";
+		convert_size = strlen(convert_result);
 		output = (char*)realloc(output, index+convert_size+1);
 		strcpy(&output[index],convert_result);
 		index += convert_size;
 	}
 
-	//end of line terminator
-	convert_result = "\n";
-	convert_size = strlen(convert_result);
-	output = (char*)realloc(output, index+convert_size+1);
-	strcpy(&output[index],convert_result);
-	index += convert_size;
-
 	for( int j = 0; j <= out_size; ++j )
 	{
+		//add spaces to account for left margin
+		convert_result = " ";
+		convert_size = strlen(convert_result);
+		for( int i = 0; i < qrline_left; ++i )
+		{
+			output = (char*)realloc(output, index+convert_size+1);
+			strcpy(&output[index],convert_result);
+			index += convert_size;
+		}
+
 		//pad line begining with 3 blank characters
 		convert_result = convert_function(BLANK);
 		convert_size = strlen(convert_result);
-		for( int i = 0; i < 3; ++i )
+		for( int i = 0; i < qrline_pad; ++i )
 		{
 			output = (char*)realloc(output, index+convert_size+1);
 			strcpy(&output[index],convert_result);
@@ -216,7 +255,7 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 		//quiet space on the right side
 		convert_result = convert_function(BLANK);
 		convert_size = strlen(convert_result);
-		for( int i = 0; i < 3; ++i )
+		for( int i = 0; i < qrline_pad; ++i )
 		{
 			output = (char*)realloc(output, index+convert_size+1);
 			strcpy(&output[index],convert_result);
@@ -232,30 +271,53 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 	}
 
 	//bottom line
-	convert_result = convert_function(BLANK);
-	convert_size = strlen(convert_result);
-	for( int i = 0; i < size + 6; ++i )
-	{
+	for(int j=0; j < qrline_pad/2; ++j){
+		//add spaces to account for left margin
+		convert_result = " ";
+		convert_size = strlen(convert_result);
+		for( int i = 0; i < qrline_left; ++i )
+		{
+			output = (char*)realloc(output, index+convert_size+1);
+			strcpy(&output[index],convert_result);
+			index += convert_size;
+		}
+
+		convert_result = convert_function(BLANK);
+		convert_size = strlen(convert_result);
+		for( int i = 0; i < size + (2*qrline_pad); ++i )
+		{
+			output = (char*)realloc(output, index+convert_size+1);
+			strcpy(&output[index],convert_result);
+			index += convert_size;
+		}
+		convert_result = "\n";
+		convert_size = strlen(convert_result);
 		output = (char*)realloc(output, index+convert_size+1);
 		strcpy(&output[index],convert_result);
 		index += convert_size;
 	}
-	convert_result = "\n";
-	convert_size = strlen(convert_result);
-	output = (char*)realloc(output, index+convert_size+1);
-	strcpy(&output[index],convert_result);
-	index += convert_size;
 
 
 	BLANK[1]=1;//switch back
-	convert_result = convert_function(BLANK);
+	//add spaces to account for left margin
+	convert_result = " ";
 	convert_size = strlen(convert_result);
-	for( int i = 0; i < size + 6; ++i )
+	for( int i = 0; i < qrline_left; ++i )
 	{
 		output = (char*)realloc(output, index+convert_size+1);
 		strcpy(&output[index],convert_result);
 		index += convert_size;
 	}
+
+	convert_result = convert_function(BLANK);
+	convert_size = strlen(convert_result);
+	for( int i = 0; i < size + (2*qrline_pad); ++i )
+	{
+		output = (char*)realloc(output, index+convert_size+1);
+		strcpy(&output[index],convert_result);
+		index += convert_size;
+	}
+
 	convert_result = "\n";
 	convert_size = strlen(convert_result);
 	output = (char*)realloc(output, index+convert_size+1);
@@ -322,11 +384,11 @@ char * qrline_block_to_char_ansi( qrline_bit * ar_in )
 		1
 	*/
 	qrline_bit ar[2];
-	
+
 	//invert, or not
 	ar[0] = ar_in[0]==0 ? 1 : 0;
 	ar[1] = ar_in[1]==0 ? 1 : 0;
-	
+
 	if( ar[0]==0 )
 	{
 		if( ar[1]==0 )
@@ -507,9 +569,6 @@ qrline_bit * qrline_overlay_format( qrline_bit * timing, int size, int pattern_f
 
 	qrline_bit generator[] = { 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1 };
 
-	//pattern_format = pattern_format&7;
-	//error_format = error_format&7;
-
 	//generate format
 	format[0] = error_format>>1&1;
 	format[1] = error_format>>0&1;
@@ -523,7 +582,6 @@ qrline_bit * qrline_overlay_format( qrline_bit * timing, int size, int pattern_f
 	//dummy values while i try to get this to work;
 
 	qrline_bit * bch = qrline_bch( 10, 5, 11, format, generator );
-	//qrline_bit bch[10];
 
 	for( int i = 0; i < 10; ++i ) format[ i + 4 ] = bch[ i ];
 
