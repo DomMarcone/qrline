@@ -130,9 +130,11 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 
 	int index = 0;// output index;
 
-	//right now, were only working unicode...
-	//convert_function = qrline_block_to_char_ansi;
+	#ifdef _WIN32
+	convert_function = qrline_block_to_char_ansi;
+	#else
 	convert_function = qrline_block_to_char_unicode;
+	#endif
 
 	//pad the top...
 	output = ( char * ) malloc( sizeof(char) );
