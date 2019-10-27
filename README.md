@@ -1,5 +1,5 @@
 # qrline
-A single, C header file, cabable of generating text based QR-Codes in terminal/ssh/cmd.exe
+A single C header file which can be used to generate block character basedd QR-Codes in a terminal or Windows command prompt
 
 ### A Simple Example
 ```
