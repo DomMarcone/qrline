@@ -9,6 +9,10 @@
 ** by Dominic Marcone                             **
 ****************************************************/
 
+#ifdef __cplusplus
+extern "C" {
+#endif //__cplusplus
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<stdint.h>
@@ -135,14 +139,28 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 
 	int index = 0;// output index;
 
+	//pad the top...
+	output = ( char * ) malloc( sizeof(char) );
+
 	#ifdef _WIN32
 	convert_function = qrline_block_to_char_ansi;
 	#else
 	convert_function = qrline_block_to_char_unicode;
+
+	//set color in unix
+	convert_result = "\033[1;37m";
+
+	convert_size = strlen(convert_result);
+	for( int i = 0; i < qrline_left; ++i )
+	{
+		output = (char*)realloc(output, index+convert_size+1);
+		strcpy(&output[index],convert_result);
+		index += convert_size;
+	}
+
 	#endif
 
-	//pad the top...
-	output = ( char * ) malloc( sizeof(char) );
+
 
 	//add spaces to account for left margin
 	convert_result = " ";
@@ -323,6 +341,20 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 	output = (char*)realloc(output, index+convert_size+1);
 	strcpy(&output[index],convert_result);
 	index += convert_size;
+
+
+	#ifndef _WIN32
+	//revert color in unix
+	convert_result = "\033[0m";;
+
+	convert_size = strlen(convert_result);
+	for( int i = 0; i < qrline_left; ++i )
+	{
+		output = (char*)realloc(output, index+convert_size+1);
+		strcpy(&output[index],convert_result);
+		index += convert_size;
+	}
+	#endif
 
 	output[ index ] = 0;
 
@@ -1102,6 +1134,10 @@ void qrline_debug_print( qrline_bit * data, int size )
 	}
 	printf( "\n" );
 }
+
+#ifdef __cplusplus
+}
+#endif //__cplusplus
 
 //END HEADER
 #endif
