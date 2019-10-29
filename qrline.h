@@ -593,104 +593,60 @@ qrline_bit * qrline_overlay_format( qrline_bit * timing, int size, int pattern_f
 }
 
 //generate patterns for xoring.
+qrline_bit qrline_noise_0(int i, int j){ return ( i + j )%2 == 0 ? 1 : 0; }
+qrline_bit qrline_noise_1(int i, int j){ return i%2 == 0 ? 1 : 0; }
+qrline_bit qrline_noise_2(int i, int j){ return j%3 == 0 ? 1 : 0; }
+qrline_bit qrline_noise_3(int i, int j){ return ( i + j )%3 == 0 ? 1 : 0; }
+qrline_bit qrline_noise_4(int i, int j){ return ( (i/2) + (j/3) )%2 == 0 ? 0 : 1; }
+qrline_bit qrline_noise_5(int i, int j){ return ( i * j )%2 + ( i * j )%3 == 0 ? 1 : 0; }
+qrline_bit qrline_noise_6(int i, int j){ return ( ( i * j )%2 + ( i * j )%2 )%3 == 0 ? 1 : 0; }
+qrline_bit qrline_noise_7(int i, int j){ return ( ( i * j )%3 + ( i + j )%2 )%2 == 0 ? 1 : 0; }
+
 qrline_bit * qrline_generate_pattern( int type, int size )
 {
 	qrline_bit * pattern;
-
+	
+	qrline_bit (*pattern_func)(int i, int j) = qrline_noise_0;
+	
 	if( type > 7 || type < 0 )type = 0;
 
 	pattern = ( qrline_bit * ) malloc( size * ( size + 1 ) * sizeof( qrline_bit ) );
+	
 	switch( type )
 	{
-		case 0 :
-			// ( i + j )mod 2 = 0
-			for( int i = 0; i < size; ++i )
-			{
-				for( int j = 0; j < size; ++j )
-				{
-					pattern[ i + j * size ] = ( i + j )%2 == 0 ? 1 : 0;
-				}
-			}
-			break;
-
-		case 1 :
-			// ( i + j )mod 2 = 0 - edit please
-			for( int i = 0; i < size; ++i )
-			{
-				for( int j = 0; j < size; ++j )
-				{
-					pattern[ i + j * size ] = i%2 == 0 ? 1 : 0;
-				}
-			}
-			break;
-
-		case 2 :
-			// ( i + j )mod 2 = 0 - edit please
-			for( int i = 0; i < size; ++i )
-			{
-				for( int j = 0; j < size; ++j )
-				{
-					pattern[ i + j * size ] = j%3 == 0 ? 1 : 0;
-				}
-			}
-			break;
-
-		case 3 :
-			// ( i + j )mod 2 = 0 - edit please
-			for( int i = 0; i < size; ++i )
-			{
-				for( int j = 0; j < size; ++j )
-				{
-					pattern[ i + j * size ] = ( i + j )%3 == 0 ? 1 : 0;
-				}
-			}
-			break;
-
-		case 4 :
-			// ( i/2 + j/3 )mod 2 = 0 - edit please
-			for( int i = 0; i < size; ++i )
-			{
-				for( int j = 0; j < size; ++j )
-				{
-					pattern[ i + j * size ] = ( (i/2) + (j/3) )%2 == 0 ? 0 : 1;
-				}
-			}
-			break;
-
-		case 5 :
-			// ( i/2 + j/3 )mod 2 = 0 - edit please
-			for( int i = 0; i < size; ++i )
-			{
-				for( int j = 0; j < size; ++j )
-				{
-					pattern[ i + j * size ] = ( i * j )%2 + ( i * j )%3 == 0 ? 1 : 0;
-				}
-			}
-			break;
-
-		case 6 :
-			// ( i/2 + j/3 )mod 2 = 0 - edit please
-			for( int i = 0; i < size; ++i )
-			{
-				for( int j = 0; j < size; ++j )
-				{
-					pattern[ j + i * size ] = ( ( i * j )%2 + ( i * j )%2 )%3 == 0 ? 1 : 0;
-				}
-			}
-			break;
-
-		case 7 :
-			// ( i/2 + j/3 )mod 2 = 0 - edit please
-			for( int i = 0; i < size; ++i )
-			{
-				for( int j = 0; j < size; ++j )
-				{
-					pattern[ i + j * size ] = ( ( i * j )%3 + ( i + j )%2 )%2 == 0 ? 1 : 0;
-				}
-			}
-			break;
-
+	case 0 :
+		pattern_func = qrline_noise_0;
+		break;
+	case 1 :
+		pattern_func = qrline_noise_1;
+		break; 
+	case 2 :
+		pattern_func = qrline_noise_2;
+		break; 
+	case 3 :
+		pattern_func = qrline_noise_3;
+		break;
+	case 4 :
+		pattern_func = qrline_noise_4;
+		break; 
+	case 5 :
+		pattern_func = qrline_noise_5;
+		break;
+	case 6 :
+		pattern_func = qrline_noise_6;
+		break; 
+	case 7 :
+		pattern_func = qrline_noise_7;
+		break; 
 	}
+	
+	for( int i = 0; i < size; ++i )
+		{
+			for( int j = 0; j < size; ++j )
+			{
+				pattern[ i + j * size ] = pattern_func(i,j);
+			}
+		}
 
 	return pattern;
 }
@@ -898,41 +854,41 @@ int qrline_char_to_int( char c )
 
 	switch( c )
 	{
-		case ' ' :
-			return 36;
-			break; //redundant break for readability...
+	case ' ' :
+		return 36;
+		break; //redundant break for readability...
 
-		case '$' :
-			return 37;
-			break;
+	case '$' :
+		return 37;
+		break;
 
-		case '%' :
-			return 38;
-			break;
+	case '%' :
+		return 38;
+		break;
 
-		case '*' :
-			return 39;
-			break;
+	case '*' :
+		return 39;
+		break;
 
-		case '+' :
-			return 40;
-			break;
+	case '+' :
+		return 40;
+		break;
 
-		case '-' :
-			return 41;
-			break;
+	case '-' :
+		return 41;
+		break;
 
-		case '.' :
-			return 42;
-			break;
+	case '.' :
+		return 42;
+		break;
 
-		case '/' :
-			return 43;
-			break;
+	case '/' :
+		return 43;
+		break;
 
-		case ':' :
-			return 44;
-			break;
+	case ':' :
+		return 44;
+		break;
 	}
 
 	return 42; //'.' character...
