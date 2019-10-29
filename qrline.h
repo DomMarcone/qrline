@@ -18,6 +18,7 @@ extern "C" {
 #include<stdint.h>
 #include<string.h>
 #include<wchar.h>
+#include<linux/bch.h>
 
 #define QRLINE_MIN_SIZE 21
 #define QRLINE_MAX_SIZE 177
@@ -641,12 +642,12 @@ qrline_bit * qrline_generate_pattern( int type, int size )
 	}
 	
 	for( int i = 0; i < size; ++i )
+	{
+		for( int j = 0; j < size; ++j )
 		{
-			for( int j = 0; j < size; ++j )
-			{
-				pattern[ i + j * size ] = pattern_func(i,j);
-			}
+			pattern[ i + j * size ] = pattern_func(i,j);
 		}
+	}
 
 	return pattern;
 }
