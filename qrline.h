@@ -13,12 +13,11 @@
 extern "C" {
 #endif //__cplusplus
 
-#include<stdio.h>
-#include<stdlib.h>
-#include<stdint.h>
-#include<string.h>
-#include<wchar.h>
-#include<linux/bch.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <wchar.h>
 
 #define QRLINE_MIN_SIZE 21
 #define QRLINE_MAX_SIZE 177
@@ -36,6 +35,7 @@ int qrline_left = 4;
 
 //prototypes
 char *       qrline_gen( char * );
+void         qrline_free( char * );
 int          qrline_calculate_size( char * );
 char *       qrline_convert_bitp( qrline_bit *, int );
 char *       qrline_block_to_char_ansi( qrline_bit * );
@@ -118,7 +118,7 @@ qrline_bit * qrline_gen_bitp( int error_type, int pattern_type, int * size, char
 int qrline_calculate_size( char * input )
 {
 	//return dummy data for now
-	return 37;
+	return 25;
 }
 
 void qrline_helper_append(char **dest, int *dest_index, const char *src){
@@ -536,22 +536,27 @@ qrline_bit * qrline_overlay_format( qrline_bit * timing, int size, int pattern_f
 	qrline_bit mask_pattern[] = { 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0 };
 
 	//for( int i = 0; i < 5; ++i )printf( "%d", (int) format[ i ] );
-	//dummy values while i try to get this to work;
-
+	//dummy values while I try to get this to work;
+	
 	qrline_bit * bch = qrline_bch( 10, 5, 11, format, generator );
+	//qrline_bit bch[15];//error correction code
 
+	
 	for( int i = 0; i < 10; ++i ) format[ i + 4 ] = bch[ i ];
+	//for( int i = 0; i < 10; ++i ) format[ i + 4 ] = (bch<<i)&1;
+	
+	//invert for drawing
+	//for( int i = 0; i < 15; ++i ) format[ i ] = format[ i ] == 0 ? 1 : 0;
 
-	for( int i = 0; i < 15; ++i ) format[ i ] = format[ i ] == 0 ? 1 : 0;
-
-	free( bch );
-
+	//free( bch );//if we're still using malloc()...
+	
+	//mask pattern
 	for( int i = 0; i < 15; ++i )
 	{
 		format[ i ] = format[ i ] == mask_pattern[ i ] ? 0 : 1;
 	}
-	//printf( "\n\n" );
-
+	
+	
 	//do a hard-coded fill of the upper right corner
 	timing[ 8            ] = format[ 0 ];
 	timing[ 8 +     size ] = format[ 1 ];
@@ -587,7 +592,7 @@ qrline_bit * qrline_overlay_format( qrline_bit * timing, int size, int pattern_f
 	timing[ 8 + ( size - 2 ) * size ] = format[ 13 ];
 	timing[ 8 + ( size - 1 ) * size ] = format[ 14 ];
 
-
+	
 	int off = size - 8;
 
 	return timing;
@@ -652,6 +657,7 @@ qrline_bit * qrline_generate_pattern( int type, int size )
 	return pattern;
 }
 
+
 //merge
 qrline_bit * qrline_merge( qrline_bit * data, qrline_bit * timing, int size )
 {
@@ -663,6 +669,7 @@ qrline_bit * qrline_merge( qrline_bit * data, qrline_bit * timing, int size )
 	return data;
 }
 
+
 //overlay pattern
 void qrline_xor_pattern( qrline_bit * data, qrline_bit * pattern, int size )
 {
@@ -672,6 +679,7 @@ void qrline_xor_pattern( qrline_bit * data, qrline_bit * pattern, int size )
 		else data[i] = 1;
 	}
 }
+
 
 //return 0 if there's not a next open spot
 int qrline_get_next_index( int current_index, int size )
@@ -736,6 +744,7 @@ int qrline_get_next_index( int current_index, int size )
 	return 0;
 }
 
+
 //return 0, for no more blocks.
 //put the begining of the next block at index 8
 int * qrline_solve_block( qrline_bit * timing, int start_index, int size )
@@ -763,6 +772,7 @@ int * qrline_solve_block( qrline_bit * timing, int start_index, int size )
 
 	return ind;
 }
+
 
 //index list for bit assignment
 int * qrline_generate_bit_index( qrline_bit * timing, int size )
@@ -798,6 +808,7 @@ int * qrline_generate_bit_index( qrline_bit * timing, int size )
 
 	return index;
 }
+
 
 qrline_bit * qrline_bch( int result_size, int frame_size, int gen_size, qrline_bit * frame, qrline_bit * gen )
 {
@@ -895,6 +906,7 @@ int qrline_char_to_int( char c )
 	return 42; //'.' character...
 }
 
+
 //cci = Character Count Indentifier Length
 qrline_bit * qrline_str_to_bits( int cci, int * size, char * s )
 {
@@ -973,6 +985,7 @@ qrline_bit * qrline_str_to_bits( int cci, int * size, char * s )
 	return bits;
 }
 
+
 qrline_bit * qrline_arrange_bits( int bit_size, qrline_bit * bits )
 {
 	qrline_bit * out = ( qrline_bit * ) malloc( bit_size * sizeof( qrline_bit ) );
@@ -1014,6 +1027,12 @@ void qrline_debug_print( qrline_bit * data, int size )
 		printf( "\n" );
 	}
 	printf( "\n" );
+}
+
+
+//free generated block characters
+void qrline_free(char *a){
+	free(a);
 }
 
 #ifdef __cplusplus

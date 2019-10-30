@@ -5,9 +5,3 @@
 *.lib
 *.so
 *.out
-
-#Windows builds will need a copy in the working directory
-bch.c
-bch.h
-linux/bch.c
-linux/bch.h
