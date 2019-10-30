@@ -48,7 +48,7 @@ qrline_bit * qrline_merge( qrline_bit * data, qrline_bit * timing, int size );
 int          qrline_get_next_index( int current_index, int size );
 int *        qrline_solve_block( qrline_bit * timing, int start_index, int size );
 int *        qrline_generate_bit_index( qrline_bit * timing, int size );
-qrline_bit * qrline_bch( int result_size, int frame_size, int gen_size, qrline_bit * frame, qrline_bit * gen );
+qrline_bit * qrline_bch(int total_codewords, int data_codewords, qrline_bit *data);
 
 int          qrline_char_to_int( char c );
 qrline_bit * qrline_str_to_bits( int cci, int * size, char * s );
@@ -148,7 +148,7 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 	convert_function = qrline_block_to_char_unicode;
 
 	//set color in unix
-	convert_result = "\033[1;37m";
+	//convert_result = "\033[1;37m";
 
 	convert_size = strlen(convert_result);
 	for( int i = 0; i < qrline_left; ++i )
@@ -163,7 +163,7 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 
 
 	//add spaces to account for left margin
-	convert_result = " ";
+	convert_result = "\033[7m\u2588\033[27m";
 	convert_size = strlen(convert_result);
 	for( int i = 0; i < qrline_left; ++i )
 	{
@@ -191,7 +191,7 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 
 	for( int j = 0; j < qrline_pad/2; ++j ){
 		//add spaces to account for left margin
-		convert_result = " ";
+		convert_result = "\033[7m\u2588\033[27m";
 		convert_size = strlen(convert_result);
 		for( int i = 0; i < qrline_left; ++i )
 		{
@@ -223,7 +223,7 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 	for( int j = 0; j <= out_size; ++j )
 	{
 		//add spaces to account for left margin
-		convert_result = " ";
+		convert_result = "\033[7m\u2588\033[27m";
 		convert_size = strlen(convert_result);
 		for( int i = 0; i < qrline_left; ++i )
 		{
@@ -291,7 +291,7 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 	//bottom line
 	for(int j=0; j < qrline_pad/2; ++j){
 		//add spaces to account for left margin
-		convert_result = " ";
+		convert_result = "\033[7m\u2588\033[27m";
 		convert_size = strlen(convert_result);
 		for( int i = 0; i < qrline_left; ++i )
 		{
@@ -318,7 +318,7 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 
 	BLANK[1]=1;//switch back
 	//add spaces to account for left margin
-	convert_result = " ";
+	convert_result = "\033[7m\u2588\033[27m";
 	convert_size = strlen(convert_result);
 	for( int i = 0; i < qrline_left; ++i )
 	{
@@ -345,7 +345,7 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 
 	#ifndef _WIN32
 	//revert color in unix
-	convert_result = "\033[0m";;
+	//convert_result = "\033[0m";;
 
 	convert_size = strlen(convert_result);
 	for( int i = 0; i < qrline_left; ++i )
@@ -613,7 +613,7 @@ qrline_bit * qrline_overlay_format( qrline_bit * timing, int size, int pattern_f
 	//for( int i = 0; i < 5; ++i )printf( "%d", (int) format[ i ] );
 	//dummy values while i try to get this to work;
 
-	qrline_bit * bch = qrline_bch( 10, 5, 11, format, generator );
+	qrline_bit * bch = qrline_bch( 15, 5, format );
 
 	for( int i = 0; i < 10; ++i ) format[ i + 4 ] = bch[ i ];
 
@@ -918,48 +918,40 @@ int * qrline_generate_bit_index( qrline_bit * timing, int size )
 	return index;
 }
 
-qrline_bit * qrline_bch( int result_size, int frame_size, int gen_size, qrline_bit * frame, qrline_bit * gen )
+qrline_bit * qrline_bch(int total_codewords, int data_codewords, qrline_bit *data)
 {
-	qrline_bit * result;
+	int result_size = total_codewords - data_codewords;
 
-	result = ( qrline_bit * ) malloc( result_size * sizeof( qrline_bit ) );
+  qrline_bit *result = (qrline_bit*)malloc(result_size * sizeof(qrline_bit));
+  memset(result, 0, sizeof(qrline_bit)*result_size);
 
-	qrline_bit * intermediate_results = ( qrline_bit * ) malloc( ( result_size + frame_size ) * sizeof( qrline_bit ) );
+  //temp generator polynomial
+  qrline_bit gen_poly[11] = {1,0,1,0,0,1,1,0,1,1,1};
 
-	//clear the working memory
-	for( int i = 0; i < result_size + frame_size; ++i )
-	{
-		int temp = 0;
-		if( i < frame_size ) temp = frame[ i ];// copy working memory into the first frame_size bits.
-		intermediate_results[ i ] = temp;
-	}
 
-	for( int i = 0; i < ( result_size + frame_size ) - gen_size; ++i )
-	{
-		if( intermediate_results[i] != 0 )
-		{
+  for(int i = data_codewords-1; i>=0; i--){
+    int feedback = data[i] ^ result[result_size-1];
+    if( feedback != 0 ){
 
-			for( int j = 0; j < gen_size; ++j )
-			{
+      for(int j = result_size-1; j >= 0; j-- ){
+        if( gen_poly[j] != 0) {
+          result[j] = result[j - 1] ^ feedback;
+        } else {
+          result[j] = result[j - 1];
+        }
+      }
 
-				intermediate_results[ i + j ] = intermediate_results[ i + j ] == gen[ j ] ? 0 : 1;
+    } else {
 
-			}
+      for(int j = result_size; j > 0; j-- ){
+        result[j] = result[j - 1];
+      }
 
-		}
+      result[0]=0;
+    }
+  }
 
-	}
-
-	for( int i = 0; i < result_size; ++i )
-	{
-		result[ i ] = intermediate_results[ ( ( result_size + frame_size ) - gen_size ) + i + 1 ];
-	}
-
-	free( intermediate_results );
-
-	//void encode_bch(struct bch_control *bch, const uint8_t *data, unsigned int len, uint8_t *ecc);
-
-	return result;
+  return result;
 }
 
 
