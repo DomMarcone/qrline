@@ -1,5 +1,5 @@
 # qrline
-A single, C header file, cabable of generating text based QR-Codes in terminal/ssh/cmd.exe
+A single C header file which can be used to generate block character based QR-Codes in a terminal or Windows command prompt
 
 ### A Simple Example
 ```
@@ -16,3 +16,4 @@ void main( int argc, char * argv[] )
 ```
 
 - Please note that this is still in beta. Currently, it can produce codes which a reader can identify as a QR Code, but it lacks the error correction bits needed for proper decoding.
+- Builds now require bch.h which comes with certain Linux builds.

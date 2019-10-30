@@ -13,11 +13,11 @@
 extern "C" {
 #endif //__cplusplus
 
-#include<stdio.h>
-#include<stdlib.h>
-#include<stdint.h>
-#include<string.h>
-#include<wchar.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <wchar.h>
 
 #define QRLINE_MIN_SIZE 21
 #define QRLINE_MAX_SIZE 177
@@ -35,6 +35,7 @@ int qrline_left = 4;
 
 //prototypes
 char *       qrline_gen( char * );
+void         qrline_free( char * );
 int          qrline_calculate_size( char * );
 char *       qrline_convert_bitp( qrline_bit *, int );
 char *       qrline_block_to_char_ansi( qrline_bit * );
@@ -117,9 +118,15 @@ qrline_bit * qrline_gen_bitp( int error_type, int pattern_type, int * size, char
 int qrline_calculate_size( char * input )
 {
 	//return dummy data for now
-	return 37;
+	return 25;
 }
 
+void qrline_helper_append(char **dest, int *dest_index, const char *src){
+	int src_len = strlen(src);
+	*dest = (char*)realloc(*dest, ((*dest_index) + src_len+1)*sizeof(char));
+	strcpy((*dest+ (*dest_index)), src);
+	*dest_index += src_len;
+}
 
 char * qrline_convert_bitp( qrline_bit * ar, int size )
 {
@@ -143,103 +150,65 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 	output = ( char * ) malloc( sizeof(char) );
 
 	#ifdef _WIN32
-	convert_function = qrline_block_to_char_ansi;
+		convert_function = qrline_block_to_char_ansi;
 	#else
-	convert_function = qrline_block_to_char_unicode;
+		convert_function = qrline_block_to_char_unicode;
 
-	//set color in unix
-	//convert_result = "\033[1;37m";
-
-	convert_size = strlen(convert_result);
-	for( int i = 0; i < qrline_left; ++i )
-	{
-		output = (char*)realloc(output, index+convert_size+1);
-		strcpy(&output[index],convert_result);
-		index += convert_size;
-	}
+		//set color in unix
+		qrline_helper_append(&output,&index,"\033[1;37m");
 
 	#endif
 
-
-
 	//add spaces to account for left margin
-	convert_result = "\033[7m\u2588\033[27m";
-	convert_size = strlen(convert_result);
 	for( int i = 0; i < qrline_left; ++i )
 	{
-		output = (char*)realloc(output, index+convert_size+1);
-		strcpy(&output[index],convert_result);
-		index += convert_size;
+		qrline_helper_append(&output, &index, " ");
 	}
 
 	BLANK[0]=1;//Very top line...
 	convert_result = convert_function(BLANK);
-	convert_size = strlen(convert_result);
 	for( int i = 0; i < size + (2*qrline_pad); ++i )
 	{
-		output = (char*)realloc(output, index+convert_size+1);
-		strcpy(&output[index],convert_result);
-		index += convert_size;
+		qrline_helper_append(&output, &index, convert_result);
 	}
-	convert_result = "\n";
-	convert_size = strlen(convert_result);
-	output = (char*)realloc(output, index+convert_size+1);
-	strcpy(&output[index],convert_result);
-	index += convert_size;
+	qrline_helper_append(&output, &index, "\n");
+
 	BLANK[0]=0;//switch back
 
 
 	for( int j = 0; j < qrline_pad/2; ++j ){
 		//add spaces to account for left margin
-		convert_result = "\033[7m\u2588\033[27m";
-		convert_size = strlen(convert_result);
+		convert_result = " ";
 		for( int i = 0; i < qrline_left; ++i )
 		{
-			output = (char*)realloc(output, index+convert_size+1);
-			strcpy(&output[index],convert_result);
-			index += convert_size;
+			qrline_helper_append(&output, &index, convert_result);
 		}
 
 		//quiet space on the top
 		convert_result = convert_function(BLANK);
-		convert_size = strlen(convert_result);
 		for( int i = 0; i < size + (2*qrline_pad); ++i )
 		{
-			//output[ index++ ] = convert_function;// more quiet zone
-			output = (char*)realloc(output, index+convert_size+1);
-			strcpy(&output[index],convert_result);
-			index += convert_size;
+			qrline_helper_append(&output, &index, convert_result);
 		}
 
-
 		//end of line terminator
-		convert_result = "\n";
-		convert_size = strlen(convert_result);
-		output = (char*)realloc(output, index+convert_size+1);
-		strcpy(&output[index],convert_result);
-		index += convert_size;
+		qrline_helper_append(&output, &index, "\n");
 	}
 
 	for( int j = 0; j <= out_size; ++j )
 	{
 		//add spaces to account for left margin
-		convert_result = "\033[7m\u2588\033[27m";
-		convert_size = strlen(convert_result);
+		convert_result = " ";
 		for( int i = 0; i < qrline_left; ++i )
 		{
-			output = (char*)realloc(output, index+convert_size+1);
-			strcpy(&output[index],convert_result);
-			index += convert_size;
+			qrline_helper_append(&output, &index, convert_result);
 		}
 
-		//pad line begining with 3 blank characters
+		//pad line begining with blank characters
 		convert_result = convert_function(BLANK);
-		convert_size = strlen(convert_result);
 		for( int i = 0; i < qrline_pad; ++i )
 		{
-			output = (char*)realloc(output, index+convert_size+1);
-			strcpy(&output[index],convert_result);
-			index += convert_size;
+			qrline_helper_append(&output, &index, convert_result);
 		}
 
 		for( int i = 0; i < size; ++i )
@@ -256,104 +225,60 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 			}
 
 			convert_result = convert_function(temp);
-			convert_size = strlen(convert_result);
-			output = (char*)realloc(output, index+convert_size+1);
-			strcpy(&output[index],convert_result);
-			index += convert_size;
-
-			/*
-			if( i == size - 1 )
-			{
-				output[ index++ ] = '\xDB';//quiet zone
-				output[ index++ ] = '\n';
-			}
-			*/
+			qrline_helper_append(&output, &index, convert_result);
 		}
 
 		//quiet space on the right side
 		convert_result = convert_function(BLANK);
-		convert_size = strlen(convert_result);
 		for( int i = 0; i < qrline_pad; ++i )
 		{
-			output = (char*)realloc(output, index+convert_size+1);
-			strcpy(&output[index],convert_result);
-			index += convert_size;
+			qrline_helper_append(&output, &index, convert_result);
 		}
 
-		convert_result = "\n";
-		convert_size = strlen(convert_result);
-		output = (char*)realloc(output, index+convert_size+1);
-		strcpy(&output[index],convert_result);
-		index += convert_size;
-
+		qrline_helper_append(&output, &index, "\n");
 	}
 
 	//bottom line
 	for(int j=0; j < qrline_pad/2; ++j){
 		//add spaces to account for left margin
-		convert_result = "\033[7m\u2588\033[27m";
-		convert_size = strlen(convert_result);
 		for( int i = 0; i < qrline_left; ++i )
 		{
-			output = (char*)realloc(output, index+convert_size+1);
-			strcpy(&output[index],convert_result);
-			index += convert_size;
+			qrline_helper_append(&output, &index, " ");
 		}
 
 		convert_result = convert_function(BLANK);
-		convert_size = strlen(convert_result);
 		for( int i = 0; i < size + (2*qrline_pad); ++i )
 		{
-			output = (char*)realloc(output, index+convert_size+1);
-			strcpy(&output[index],convert_result);
-			index += convert_size;
+			qrline_helper_append(&output, &index, convert_result);
 		}
-		convert_result = "\n";
-		convert_size = strlen(convert_result);
-		output = (char*)realloc(output, index+convert_size+1);
-		strcpy(&output[index],convert_result);
-		index += convert_size;
+		qrline_helper_append(&output, &index, "\n");
 	}
 
 
 	BLANK[1]=1;//switch back
 	//add spaces to account for left margin
-	convert_result = "\033[7m\u2588\033[27m";
-	convert_size = strlen(convert_result);
 	for( int i = 0; i < qrline_left; ++i )
 	{
-		output = (char*)realloc(output, index+convert_size+1);
-		strcpy(&output[index],convert_result);
-		index += convert_size;
+		qrline_helper_append(&output, &index, " ");
 	}
 
 	convert_result = convert_function(BLANK);
-	convert_size = strlen(convert_result);
 	for( int i = 0; i < size + (2*qrline_pad); ++i )
 	{
-		output = (char*)realloc(output, index+convert_size+1);
-		strcpy(&output[index],convert_result);
-		index += convert_size;
+		qrline_helper_append(&output, &index, convert_result);
 	}
 
-	convert_result = "\n";
-	convert_size = strlen(convert_result);
-	output = (char*)realloc(output, index+convert_size+1);
-	strcpy(&output[index],convert_result);
-	index += convert_size;
-
+	qrline_helper_append(&output, &index, "\n");
 
 	#ifndef _WIN32
-	//revert color in unix
-	//convert_result = "\033[0m";;
 
-	convert_size = strlen(convert_result);
-	for( int i = 0; i < qrline_left; ++i )
-	{
-		output = (char*)realloc(output, index+convert_size+1);
-		strcpy(&output[index],convert_result);
-		index += convert_size;
-	}
+		//revert color in unix
+		convert_result = "\033[0m";;
+		for( int i = 0; i < qrline_left; ++i )
+		{
+			qrline_helper_append(&output, &index, convert_result);
+		}
+
 	#endif
 
 	output[ index ] = 0;
@@ -615,17 +540,21 @@ qrline_bit * qrline_overlay_format( qrline_bit * timing, int size, int pattern_f
 
 	qrline_bit * bch = qrline_bch( 15, 5, format );
 
+
 	for( int i = 0; i < 10; ++i ) format[ i + 4 ] = bch[ i ];
+	//for( int i = 0; i < 10; ++i ) format[ i + 4 ] = (bch<<i)&1;
 
-	for( int i = 0; i < 15; ++i ) format[ i ] = format[ i ] == 0 ? 1 : 0;
+	//invert for drawing
+	//for( int i = 0; i < 15; ++i ) format[ i ] = format[ i ] == 0 ? 1 : 0;
 
-	free( bch );
+	//free( bch );//if we're still using malloc()...
 
+	//mask pattern
 	for( int i = 0; i < 15; ++i )
 	{
 		format[ i ] = format[ i ] == mask_pattern[ i ] ? 0 : 1;
 	}
-	//printf( "\n\n" );
+
 
 	//do a hard-coded fill of the upper right corner
 	timing[ 8            ] = format[ 0 ];
@@ -669,107 +598,64 @@ qrline_bit * qrline_overlay_format( qrline_bit * timing, int size, int pattern_f
 }
 
 //generate patterns for xoring.
+qrline_bit qrline_noise_0(int i, int j){ return ( i + j )%2 == 0 ? 1 : 0; }
+qrline_bit qrline_noise_1(int i, int j){ return i%2 == 0 ? 1 : 0; }
+qrline_bit qrline_noise_2(int i, int j){ return j%3 == 0 ? 1 : 0; }
+qrline_bit qrline_noise_3(int i, int j){ return ( i + j )%3 == 0 ? 1 : 0; }
+qrline_bit qrline_noise_4(int i, int j){ return ( (i/2) + (j/3) )%2 == 0 ? 0 : 1; }
+qrline_bit qrline_noise_5(int i, int j){ return ( i * j )%2 + ( i * j )%3 == 0 ? 1 : 0; }
+qrline_bit qrline_noise_6(int i, int j){ return ( ( i * j )%2 + ( i * j )%2 )%3 == 0 ? 1 : 0; }
+qrline_bit qrline_noise_7(int i, int j){ return ( ( i * j )%3 + ( i + j )%2 )%2 == 0 ? 1 : 0; }
+
 qrline_bit * qrline_generate_pattern( int type, int size )
 {
 	qrline_bit * pattern;
 
+	qrline_bit (*pattern_func)(int i, int j) = qrline_noise_0;
+
 	if( type > 7 || type < 0 )type = 0;
 
 	pattern = ( qrline_bit * ) malloc( size * ( size + 1 ) * sizeof( qrline_bit ) );
+
 	switch( type )
 	{
-		case 0 :
-			// ( i + j )mod 2 = 0
-			for( int i = 0; i < size; ++i )
-			{
-				for( int j = 0; j < size; ++j )
-				{
-					pattern[ i + j * size ] = ( i + j )%2 == 0 ? 1 : 0;
-				}
-			}
-			break;
+	case 0 :
+		pattern_func = qrline_noise_0;
+		break;
+	case 1 :
+		pattern_func = qrline_noise_1;
+		break;
+	case 2 :
+		pattern_func = qrline_noise_2;
+		break;
+	case 3 :
+		pattern_func = qrline_noise_3;
+		break;
+	case 4 :
+		pattern_func = qrline_noise_4;
+		break;
+	case 5 :
+		pattern_func = qrline_noise_5;
+		break;
+	case 6 :
+		pattern_func = qrline_noise_6;
+		break;
+	case 7 :
+		pattern_func = qrline_noise_7;
+		break;
+	}
 
-		case 1 :
-			// ( i + j )mod 2 = 0 - edit please
-			for( int i = 0; i < size; ++i )
-			{
-				for( int j = 0; j < size; ++j )
-				{
-					pattern[ i + j * size ] = i%2 == 0 ? 1 : 0;
-				}
-			}
-			break;
-
-		case 2 :
-			// ( i + j )mod 2 = 0 - edit please
-			for( int i = 0; i < size; ++i )
-			{
-				for( int j = 0; j < size; ++j )
-				{
-					pattern[ i + j * size ] = j%3 == 0 ? 1 : 0;
-				}
-			}
-			break;
-
-		case 3 :
-			// ( i + j )mod 2 = 0 - edit please
-			for( int i = 0; i < size; ++i )
-			{
-				for( int j = 0; j < size; ++j )
-				{
-					pattern[ i + j * size ] = ( i + j )%3 == 0 ? 1 : 0;
-				}
-			}
-			break;
-
-		case 4 :
-			// ( i/2 + j/3 )mod 2 = 0 - edit please
-			for( int i = 0; i < size; ++i )
-			{
-				for( int j = 0; j < size; ++j )
-				{
-					pattern[ i + j * size ] = ( (i/2) + (j/3) )%2 == 0 ? 0 : 1;
-				}
-			}
-			break;
-
-		case 5 :
-			// ( i/2 + j/3 )mod 2 = 0 - edit please
-			for( int i = 0; i < size; ++i )
-			{
-				for( int j = 0; j < size; ++j )
-				{
-					pattern[ i + j * size ] = ( i * j )%2 + ( i * j )%3 == 0 ? 1 : 0;
-				}
-			}
-			break;
-
-		case 6 :
-			// ( i/2 + j/3 )mod 2 = 0 - edit please
-			for( int i = 0; i < size; ++i )
-			{
-				for( int j = 0; j < size; ++j )
-				{
-					pattern[ j + i * size ] = ( ( i * j )%2 + ( i * j )%2 )%3 == 0 ? 1 : 0;
-				}
-			}
-			break;
-
-		case 7 :
-			// ( i/2 + j/3 )mod 2 = 0 - edit please
-			for( int i = 0; i < size; ++i )
-			{
-				for( int j = 0; j < size; ++j )
-				{
-					pattern[ i + j * size ] = ( ( i * j )%3 + ( i + j )%2 )%2 == 0 ? 1 : 0;
-				}
-			}
-			break;
-
+	for( int i = 0; i < size; ++i )
+	{
+		for( int j = 0; j < size; ++j )
+		{
+			pattern[ i + j * size ] = pattern_func(i,j);
+		}
 	}
 
 	return pattern;
 }
+
 
 //merge
 qrline_bit * qrline_merge( qrline_bit * data, qrline_bit * timing, int size )
@@ -782,6 +668,7 @@ qrline_bit * qrline_merge( qrline_bit * data, qrline_bit * timing, int size )
 	return data;
 }
 
+
 //overlay pattern
 void qrline_xor_pattern( qrline_bit * data, qrline_bit * pattern, int size )
 {
@@ -791,6 +678,7 @@ void qrline_xor_pattern( qrline_bit * data, qrline_bit * pattern, int size )
 		else data[i] = 1;
 	}
 }
+
 
 //return 0 if there's not a next open spot
 int qrline_get_next_index( int current_index, int size )
@@ -855,6 +743,7 @@ int qrline_get_next_index( int current_index, int size )
 	return 0;
 }
 
+
 //return 0, for no more blocks.
 //put the begining of the next block at index 8
 int * qrline_solve_block( qrline_bit * timing, int start_index, int size )
@@ -882,6 +771,7 @@ int * qrline_solve_block( qrline_bit * timing, int start_index, int size )
 
 	return ind;
 }
+
 
 //index list for bit assignment
 int * qrline_generate_bit_index( qrline_bit * timing, int size )
@@ -966,45 +856,46 @@ int qrline_char_to_int( char c )
 
 	switch( c )
 	{
-		case ' ' :
-			return 36;
-			break; //redundant break for readability...
+	case ' ' :
+		return 36;
+		break; //redundant break for readability...
 
-		case '$' :
-			return 37;
-			break;
+	case '$' :
+		return 37;
+		break;
 
-		case '%' :
-			return 38;
-			break;
+	case '%' :
+		return 38;
+		break;
 
-		case '*' :
-			return 39;
-			break;
+	case '*' :
+		return 39;
+		break;
 
-		case '+' :
-			return 40;
-			break;
+	case '+' :
+		return 40;
+		break;
 
-		case '-' :
-			return 41;
-			break;
+	case '-' :
+		return 41;
+		break;
 
-		case '.' :
-			return 42;
-			break;
+	case '.' :
+		return 42;
+		break;
 
-		case '/' :
-			return 43;
-			break;
+	case '/' :
+		return 43;
+		break;
 
-		case ':' :
-			return 44;
-			break;
+	case ':' :
+		return 44;
+		break;
 	}
 
 	return 42; //'.' character...
 }
+
 
 //cci = Character Count Indentifier Length
 qrline_bit * qrline_str_to_bits( int cci, int * size, char * s )
@@ -1084,6 +975,7 @@ qrline_bit * qrline_str_to_bits( int cci, int * size, char * s )
 	return bits;
 }
 
+
 qrline_bit * qrline_arrange_bits( int bit_size, qrline_bit * bits )
 {
 	qrline_bit * out = ( qrline_bit * ) malloc( bit_size * sizeof( qrline_bit ) );
@@ -1125,6 +1017,12 @@ void qrline_debug_print( qrline_bit * data, int size )
 		printf( "\n" );
 	}
 	printf( "\n" );
+}
+
+
+//free generated block characters
+void qrline_free(char *a){
+	free(a);
 }
 
 #ifdef __cplusplus
