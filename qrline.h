@@ -22,7 +22,7 @@ extern "C" {
 #define QRLINE_MIN_SIZE 21
 #define QRLINE_MAX_SIZE 177
 
-#define QRLINE_DEFAULT_PAD 5
+#define QRLINE_DEFAULT_PAD 3
 
 //mask define for overlaying timings and positional data
 #define QRLINE_MASK 2
@@ -31,7 +31,7 @@ typedef int8_t qrline_bit;
 
 //global variables
 int qrline_pad = QRLINE_DEFAULT_PAD;
-int qrline_left = 4;
+int qrline_left = 10;
 
 //prototypes
 char *       qrline_gen( char * );
@@ -55,43 +55,44 @@ int          qrline_char_to_int( char c );
 qrline_bit * qrline_str_to_bits( int cci, int * size, char * s );
 qrline_bit * qrline_arrange_bits( int bit_size, qrline_bit * bits );
 
-qrline_bit * qrline_gen_bitp( int error_type, int pattern_type, int * size, char * input );
+qrline_bit * qrline_gen_bitp( int error_type, int pattern_type, int size, char * input );
 
 
 char * qrline_gen( char * input )
 {
-	int size;
-
-	qrline_bit * bits = qrline_gen_bitp( 0, 5, &size, input );
+	int size = qrline_calculate_size( input );
+	
+	qrline_bit * bits = qrline_gen_bitp( 0, 5, size, input );
 
 	return qrline_convert_bitp( bits, size );
 }
 
 
-qrline_bit * qrline_gen_bitp( int error_type, int pattern_type, int * size, char * input )
+qrline_bit * qrline_gen_bitp( int error_type, int pattern_type, int size, char * input )
 {
-	*size = qrline_calculate_size( input );
-
 	int code_len;
 	qrline_bit * code_bits;
 
-	qrline_bit * timing = qrline_generate_timing( *size );
+	qrline_bit * timing = qrline_generate_timing( size );
 
 
-	qrline_bit * pattern = qrline_generate_pattern( pattern_type, *size );
-
+	qrline_bit * pattern = qrline_generate_pattern( pattern_type, size );
+	
+	//memset(timing,0,size*size);
+	//memset(pattern,0,size*size);
+	
 	//qrline_debug_print( qrline_generate_pattern( 6, 25), 25 );
-	qrline_overlay_format( timing, *size, pattern_type, error_type );
+	qrline_overlay_format( timing, size, pattern_type, error_type );
 
-	int * bit_index = qrline_generate_bit_index( timing, *size );
-	//qrline_debug_print( timing, *size );
+	int * bit_index = qrline_generate_bit_index( timing, size );
+	//qrline_debug_print( timing, size );
 
-	qrline_merge( pattern, timing, *size );
+	qrline_merge( pattern, timing, size );
 
 	code_bits = qrline_str_to_bits( 9, &code_len, input );
 
 	code_bits = qrline_arrange_bits( code_len, code_bits );
-
+	
 	for( int i = 0; i < code_len; ++i )
 	{
 		if( bit_index[ i ] != 0 )
@@ -100,12 +101,10 @@ qrline_bit * qrline_gen_bitp( int error_type, int pattern_type, int * size, char
 		}
 	}
 
-
-
 	free( bit_index );
 	free( timing );
 
-	//qrline_debug_print( pattern, *size );
+	//qrline_debug_print( pattern, size );
 
 	return pattern;
 }
@@ -523,37 +522,41 @@ qrline_bit * qrline_generate_timing( int size )
 qrline_bit * qrline_overlay_format( qrline_bit * timing, int size, int pattern_format, int error_format )
 {
 	qrline_bit format[15];
-
-	qrline_bit generator[] = { 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1 };
-
+	
+	memset(format,0,sizeof(format));
+	
 	//generate format
-	format[0] = error_format>>1&1;
-	format[1] = error_format>>0&1;
-	format[2] = pattern_format>>2&1;
-	format[3] = pattern_format>>1&1;
-	format[4] = pattern_format>>0&1;
+	format[0] = (error_format>>1)%2;
+	format[1] = (error_format>>0)%2;
+	format[2] = (pattern_format>>2)%2;
+	format[3] = (pattern_format>>1)%2;
+	format[4] = (pattern_format)%2;
 
 	qrline_bit mask_pattern[] = { 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0 };
-
-	//for( int i = 0; i < 5; ++i )printf( "%d", (int) format[ i ] );
-	//dummy values while i try to get this to work;
-
+	
+	printf("Current format data (before bch) : ");
+	for( int i=0; i<15; ++i )printf(" %d", format[i]);
+	printf("\n");
+	
 	qrline_bit * bch = qrline_bch( 15, 5, format );
-
-
-	for( int i = 0; i < 10; ++i ) format[ i + 4 ] = bch[ i ];
-	//for( int i = 0; i < 10; ++i ) format[ i + 4 ] = (bch<<i)&1;
-
-	//invert for drawing
-	//for( int i = 0; i < 15; ++i ) format[ i ] = format[ i ] == 0 ? 1 : 0;
-
-	//free( bch );//if we're still using malloc()...
+	
+	for( int i = 0; i < 10; ++i ) format[ i + 5 ] = bch[i]%2;
+	
+	printf("Current format data : ");
+	for( int i=0; i<15; ++i )printf(" %d", format[i]);
+	printf("\n");
 
 	//mask pattern
 	for( int i = 0; i < 15; ++i )
 	{
-		format[ i ] = format[ i ] == mask_pattern[ i ] ? 0 : 1;
+		format[ i ] = mask_pattern[ i ] ? !format[ i ] : format[ i ];
 	}
+	
+	printf("Current format data after masking : ");
+	for( int i=0; i<15; ++i )printf(" %d", format[i]);
+	printf("\n");
+	
+	free(bch);
 
 
 	//do a hard-coded fill of the upper right corner
