@@ -540,7 +540,11 @@ qrline_bit * qrline_overlay_format( qrline_bit * timing, int size, int pattern_f
 	
 	qrline_bit * bch = qrline_bch( 15, 5, format );
 	
-	for( int i = 0; i < 10; ++i ) format[ i + 5 ] = bch[i]%2;
+	for( int i = 0; i < 10; ++i ){
+		uint8_t temp = bch[i]&1;
+		if(temp<0) temp *= -1;
+		format[i+5] = temp;
+	}
 	
 	printf("Current format data : ");
 	for( int i=0; i<15; ++i )printf(" %d", format[i]);
@@ -558,6 +562,8 @@ qrline_bit * qrline_overlay_format( qrline_bit * timing, int size, int pattern_f
 	
 	free(bch);
 
+	//memset(format,0,sizeof(format));
+	for(int i=0; i<15; ++i )format[i] != format[i];
 
 	//do a hard-coded fill of the upper right corner
 	timing[ 8            ] = format[ 0 ];
@@ -576,14 +582,14 @@ qrline_bit * qrline_overlay_format( qrline_bit * timing, int size, int pattern_f
 	timing[ 1 + 8 * size ] = format[ 13 ];
 	timing[     8 * size ] = format[ 14 ];
 
-	timing[ ( size - 1 ) + 8 * size ] = format[ 0 ];
-	timing[ ( size - 2 ) + 8 * size ] = format[ 1 ];
-	timing[ ( size - 3 ) + 8 * size ] = format[ 2 ];
-	timing[ ( size - 4 ) + 8 * size ] = format[ 3 ];
-	timing[ ( size - 5 ) + 8 * size ] = format[ 4 ];
-	timing[ ( size - 6 ) + 8 * size ] = format[ 5 ];
-	timing[ ( size - 7 ) + 8 * size ] = format[ 6 ];
-	timing[ ( size - 8 ) + 8 * size ] = format[ 7 ];
+	timing[ ( size - 1 ) + (8 * size) ] = format[ 0 ];
+	timing[ ( size - 2 ) + (8 * size) ] = format[ 1 ];
+	timing[ ( size - 3 ) + (8 * size) ] = format[ 2 ];
+	timing[ ( size - 4 ) + (8 * size) ] = format[ 3 ];
+	timing[ ( size - 5 ) + (8 * size) ] = format[ 4 ];
+	timing[ ( size - 6 ) + (8 * size) ] = format[ 5 ];
+	timing[ ( size - 7 ) + (8 * size) ] = format[ 6 ];
+	timing[ ( size - 8 ) + (8 * size) ] = format[ 7 ];
 
 	timing[ 8 + ( size - 8 ) * size ] = 1;//blank
 	timing[ 8 + ( size - 7 ) * size ] = format[ 8 ];
@@ -594,21 +600,18 @@ qrline_bit * qrline_overlay_format( qrline_bit * timing, int size, int pattern_f
 	timing[ 8 + ( size - 2 ) * size ] = format[ 13 ];
 	timing[ 8 + ( size - 1 ) * size ] = format[ 14 ];
 
-
-	int off = size - 8;
-
 	return timing;
 }
 
 //generate patterns for xoring.
-qrline_bit qrline_noise_0(int i, int j){ return ( i + j )%2 == 0 ? 1 : 0; }
-qrline_bit qrline_noise_1(int i, int j){ return i%2 == 0 ? 1 : 0; }
-qrline_bit qrline_noise_2(int i, int j){ return j%3 == 0 ? 1 : 0; }
-qrline_bit qrline_noise_3(int i, int j){ return ( i + j )%3 == 0 ? 1 : 0; }
-qrline_bit qrline_noise_4(int i, int j){ return ( (i/2) + (j/3) )%2 == 0 ? 0 : 1; }
-qrline_bit qrline_noise_5(int i, int j){ return ( i * j )%2 + ( i * j )%3 == 0 ? 1 : 0; }
-qrline_bit qrline_noise_6(int i, int j){ return ( ( i * j )%2 + ( i * j )%2 )%3 == 0 ? 1 : 0; }
-qrline_bit qrline_noise_7(int i, int j){ return ( ( i * j )%3 + ( i + j )%2 )%2 == 0 ? 1 : 0; }
+qrline_bit qrline_noise_0(int j, int i){ return ( i + j )%2 == 0 ? 1 : 0; }
+qrline_bit qrline_noise_1(int j, int i){ return i%2 == 0 ? 1 : 0; }
+qrline_bit qrline_noise_2(int j, int i){ return j%3 == 0 ? 1 : 0; }
+qrline_bit qrline_noise_3(int j, int i){ return ( i + j )%3 == 0 ? 1 : 0; }
+qrline_bit qrline_noise_4(int j, int i){ return ( (i/2) + (j/3) )%2 == 0 ? 1 : 0; }
+qrline_bit qrline_noise_5(int j, int i){ return ( i * j )%2 + ( i * j )%3 == 0 ? 1 : 0; }
+qrline_bit qrline_noise_6(int j, int i){ return ( ( i * j )%2 + ( i * j )%3 )%2 == 0 ? 1 : 0; }
+qrline_bit qrline_noise_7(int j, int i){ return ( ( i * j )%3 + ( i + j )%2 )%2 == 0 ? 1 : 0; }
 
 qrline_bit * qrline_generate_pattern( int type, int size )
 {
