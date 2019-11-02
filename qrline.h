@@ -62,7 +62,8 @@ char * qrline_gen( char * input )
 {
 	int size = qrline_calculate_size( input );
 	
-	qrline_bit * bits = qrline_gen_bitp( 0, 5, size, input );
+	//TODO: Refactor the pattern information into qrline_gen_bitp. Because it handles the data, it can determine the best pattern.
+	qrline_bit * bits = qrline_gen_bitp( 0, 6, size, input );
 
 	return qrline_convert_bitp( bits, size );
 }
@@ -82,14 +83,14 @@ qrline_bit * qrline_gen_bitp( int error_type, int pattern_type, int size, char *
 	//memset(pattern,0,size*size);
 	
 	//qrline_debug_print( qrline_generate_pattern( 6, 25), 25 );
-	//qrline_overlay_format( timing, size, pattern_type, error_type );
+	qrline_overlay_format( timing, size, pattern_type, error_type );
 
 	int* bit_index = qrline_generate_bit_index( timing, size );
 	//qrline_debug_print( timing, size );
 
 	qrline_merge( pattern, timing, size );
 	
-	qrline_overlay_format( pattern, size, pattern_type, error_type );
+	//qrline_overlay_format( pattern, size, pattern_type, error_type );
 
 	code_bits = qrline_str_to_bits( 9, &code_len, input );
 
