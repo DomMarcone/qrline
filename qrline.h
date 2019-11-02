@@ -82,12 +82,14 @@ qrline_bit * qrline_gen_bitp( int error_type, int pattern_type, int size, char *
 	//memset(pattern,0,size*size);
 	
 	//qrline_debug_print( qrline_generate_pattern( 6, 25), 25 );
-	qrline_overlay_format( timing, size, pattern_type, error_type );
+	//qrline_overlay_format( timing, size, pattern_type, error_type );
 
-	int * bit_index = qrline_generate_bit_index( timing, size );
+	int* bit_index = qrline_generate_bit_index( timing, size );
 	//qrline_debug_print( timing, size );
 
 	qrline_merge( pattern, timing, size );
+	
+	qrline_overlay_format( pattern, size, pattern_type, error_type );
 
 	code_bits = qrline_str_to_bits( 9, &code_len, input );
 
@@ -669,9 +671,11 @@ qrline_bit * qrline_merge( qrline_bit * data, qrline_bit * timing, int size )
 	for( int i = 0; i < size * size; ++i )
 	{
 		if( timing[i] != QRLINE_MASK )data[i] = timing[i];
+		//if( timing[i] == QRLINE_MASK )timing[i] = data[i];
 	}
 
 	return data;
+	//return timing;
 }
 
 
@@ -780,13 +784,13 @@ int * qrline_solve_block( qrline_bit * timing, int start_index, int size )
 
 
 //index list for bit assignment
-int * qrline_generate_bit_index( qrline_bit * timing, int size )
+int* qrline_generate_bit_index( qrline_bit * timing, int size )
 {
 	int * index;
 
 	int count = 0;
 
-	index = ( int * ) malloc( size * size * sizeof( int ) );
+	index = ( int* ) malloc( size * size * sizeof( int ) );
 
 	//Initialize array to 0, an impossible index
 	for( int j = 0; j < size * size; ++j )
