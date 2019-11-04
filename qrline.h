@@ -607,14 +607,14 @@ qrline_bit * qrline_overlay_format( qrline_bit * timing, int size, int pattern_f
 }
 
 //generate patterns for xoring.
-qrline_bit qrline_noise_0(int j, int i){ return ( i + j )%2 == 0 ? 1 : 0; }
-qrline_bit qrline_noise_1(int j, int i){ return i%2 == 0 ? 1 : 0; }
-qrline_bit qrline_noise_2(int j, int i){ return j%3 == 0 ? 1 : 0; }
-qrline_bit qrline_noise_3(int j, int i){ return ( i + j )%3 == 0 ? 1 : 0; }
-qrline_bit qrline_noise_4(int j, int i){ return ( (i/2) + (j/3) )%2 == 0 ? 1 : 0; }
-qrline_bit qrline_noise_5(int j, int i){ return ( i * j )%2 + ( i * j )%3 == 0 ? 1 : 0; }
-qrline_bit qrline_noise_6(int j, int i){ return ( ( i * j )%2 + ( i * j )%3 )%2 == 0 ? 1 : 0; }
-qrline_bit qrline_noise_7(int j, int i){ return ( ( i * j )%3 + ( i + j )%2 )%2 == 0 ? 1 : 0; }
+qrline_bit qrline_noise_0(int j, int i){ return ( i + j )%2 == 0 ? 1 : 0; } //registers as a code
+qrline_bit qrline_noise_1(int j, int i){ return j%2 == 0 ? 1 : 0; } //registers, but seems to cause problems...
+qrline_bit qrline_noise_2(int j, int i){ return i%3 == 0 ? 1 : 0; } //registers as a code
+qrline_bit qrline_noise_3(int j, int i){ return ( i + j )%3 == 0 ? 1 : 0; } //registers as a code
+qrline_bit qrline_noise_4(int j, int i){ return ( (j/2) + (i/3) )%2 == 0 ? 1 : 0; } //registers as a code
+qrline_bit qrline_noise_5(int j, int i){ return ( i * j )%2 + ( i * j )%3 == 0 ? 1 : 0; } //registers as a code
+qrline_bit qrline_noise_6(int j, int i){ return ( ( i * j )%2 + ( i * j )%3 )%2 == 0 ? 1 : 0; } //registers as a code
+qrline_bit qrline_noise_7(int j, int i){ return ( ( i * j )%3 + ( i + j )%2 )%2 == 0 ? 1 : 0; } //registers as a code
 
 qrline_bit * qrline_generate_pattern( int type, int size )
 {
