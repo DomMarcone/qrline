@@ -82,11 +82,9 @@ qrline_bit * qrline_gen_bitp( int error_type, int pattern_type, int size, char *
 	//memset(timing,0,size*size);
 	//memset(pattern,0,size*size);
 	
-	//qrline_debug_print( qrline_generate_pattern( 6, 25), 25 );
 	qrline_overlay_format( timing, size, pattern_type, error_type );
 
 	int* bit_index = qrline_generate_bit_index( timing, size );
-	//qrline_debug_print( timing, size );
 
 	qrline_merge( pattern, timing, size );
 	
@@ -158,7 +156,6 @@ char * qrline_convert_bitp( qrline_bit * ar, int size )
 
 		//set color in unix
 		qrline_helper_append(&output,&index,"\033[1;37m");
-
 	#endif
 
 	//add spaces to account for left margin
@@ -976,8 +973,6 @@ qrline_bit * qrline_str_to_bits( int cci, int * size, char * s )
 					bits[ index++ ] = (temp>>j)&1;
 				}
 			}
-
-
 		}
 
 	}
@@ -993,19 +988,15 @@ qrline_bit * qrline_arrange_bits( int bit_size, qrline_bit * bits )
 
 	int k = 0;
 
-	for( int i = 0; i < bit_size / 8; ++i )
+	for( int i = 0; i < bit_size; i += 8 )
 	{
-
 		for( int j = 7; j >= 0; --j )
 		{
-
-			if( j + ( i * 8 ) <= bit_size )
+			if( j+i <= bit_size )
 			{
-				out[ k++ ] = bits[ j + ( i * 8 ) ];
+				out[k++] = bits[j+i];
 			}
-
 		}
-
 	}
 
 	free( bits );
